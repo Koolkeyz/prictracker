@@ -1,13 +1,18 @@
-from backend.config import get_settings
-from bson import ObjectId
-from pymongo import AsyncMongoClient
 from typing import Annotated
+
+from bson import ObjectId
 from pydantic import BeforeValidator
+from pymongo import AsyncMongoClient
+
+from .settings import get_settings
+
 
 environmentConfig = get_settings()
 mongo_uri = environmentConfig.MONGO_URI.strip()
 
-client = AsyncMongoClient(mongo_uri,)
+client = AsyncMongoClient(
+    mongo_uri,
+)
 db = client[environmentConfig.MONGO_DB]
 
 # Represents an ObjectId field in the database.

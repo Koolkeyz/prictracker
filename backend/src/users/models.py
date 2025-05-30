@@ -1,8 +1,9 @@
+from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from enum import Enum
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional
 from bson import ObjectId
-from helpers.db import PyObjectId
+from ..helpers.db import PyObjectId
 
 
 class UserRole(str, Enum):
@@ -18,8 +19,13 @@ class UserModel(BaseModel):
         populate_by_name=True,
         extra="allow",
     )
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    role: UserRole = Field(UserRole.user, description="Role of the user (admin/user)")
     username: str = Field(
         ..., min_length=3, max_length=50, description="Username of the user"
+    )
+    password: str = Field(
+        "", min_length=8, max_length=100, description="Hashed password of the user"
     )
     email: EmailStr = Field(..., description="Email address of the user")
     first_name: str = Field(
@@ -31,16 +37,11 @@ class UserModel(BaseModel):
     force_password_change: bool = Field(
         default=False, description="Force user to change password on next login"
     )
-    role: UserRole = Field(
-        UserRole.user, description="Role of the user (admin/user)"
+    created_at: Optional[datetime] = Field(
+        default_factory=lambda: datetime.now(),
+        description="Timestamp when the product was added",
     )
 
-
-class UserSchema(UserModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    password: str = Field(
-        '', min_length=8, max_length=100, description="Hashed password of the user"
-    )
 
 class UserUpdateSchema(BaseModel):
     username: Optional[str] = Field(

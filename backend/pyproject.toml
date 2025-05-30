@@ -15,8 +15,5 @@ dependencies = [
 ]
 
 [project.scripts]
-backend2 = "backend:main"
+backend = "fastapi dev src.main:pricetracker"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"

@@ -1,17 +1,38 @@
-from fastapi.routing import APIRouter
-from typing import Annotated
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import Depends, HTTPException, status
 from datetime import timedelta
-from helpers.auth import (
-    Token,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    create_access_token,
-    authenticate_user,
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from ..users.models import UserModel
+from .models import Token
+from .service import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    authenticate_user,
+    create_access_token,
+    validate_token,
 )
 
 router = APIRouter()
+
+
+async def get_current_user(
+    token_data: Annotated[dict, Depends(validate_token)],
+) -> UserModel:
+    """
+    Dependency to get the current user from the token.
+    This will be used in routes that require authentication.
+    """
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    current_user = UserModel(**token_data)
+    return current_user
+
 
 @router.post("/token", response_model=Token, tags=["Authentication"])
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> Token:

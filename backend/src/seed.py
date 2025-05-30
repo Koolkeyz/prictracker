@@ -1,6 +1,6 @@
 from helpers.db import db
-from schemas.users import UserModel 
-from helpers.auth import get_password_hash
+from auth.service import get_password_hash
+from users.models import UserModel
 
 
 

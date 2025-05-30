@@ -1,22 +1,26 @@
 from typing import Annotated
-from fastapi.routing import APIRouter
-from fastapi import Depends, HTTPException, status
-from helpers.db import db
-from helpers.auth import get_current_user, get_password_hash
-from schemas.users import UserSchema, UserRole
-from fastapi import Path
-from bson import ObjectId
 
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from ..auth.controller import get_current_user
+from ..auth.service import get_password_hash
+from ..helpers.db import db
+from .models import UserModel, UserRole
 
 router = APIRouter()
 
 
-@router.post("/create", status_code=status.HTTP_201_CREATED)
-async def createUser(
-    new_user: UserSchema, current_user: Annotated[UserSchema, Depends(get_current_user)]
+@router.post(
+    "/create", status_code=status.HTTP_201_CREATED, summary="Create a new user"
+)
+async def create_user(
+    new_user: UserModel, current_user: Annotated[UserModel, Depends(get_current_user)]
 ):
     """
-    Create a new user.
+    Allows an admin to create aa new user.
+
+    Requires existing user to have role 'admin'.
     """
     try:
         if current_user.role != UserRole.admin:
@@ -60,9 +64,9 @@ async def createUser(
         )
 
 
-@router.get("/", response_model=list[UserSchema], status_code=status.HTTP_200_OK)
-async def getUsers(
-    current_user: Annotated[UserSchema, Depends(get_current_user)],
+@router.get("/", response_model=list[UserModel], status_code=status.HTTP_200_OK)
+async def get_users(
+    current_user: Annotated[UserModel, Depends(get_current_user)],
 ):
     """
     Retrieve a list of all users.
@@ -74,7 +78,7 @@ async def getUsers(
                 detail="You do not have permission to view users",
             )
         users = await db.get_collection("users").find().to_list(length=None)
-        return [UserSchema(**user).model_dump(exclude={"password"}) for user in users]
+        return [UserModel(**user).model_dump(exclude={"password"}) for user in users]
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -82,10 +86,10 @@ async def getUsers(
         )
 
 
-@router.get("/{user_id}", response_model=UserSchema, status_code=status.HTTP_200_OK)
-async def getUser(
+@router.get("/{user_id}", response_model=UserModel, status_code=status.HTTP_200_OK)
+async def get_user(
     user_id: Annotated[str, Path(description="ID of the user to retrieve")],
-    current_user: Annotated[UserSchema, Depends(get_current_user)],
+    current_user: Annotated[UserModel, Depends(get_current_user)],
 ):
     """
     Retrieve a user by ID.
@@ -102,7 +106,7 @@ async def getUser(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-        return UserSchema(**user).model_dump(exclude={"password"})
+        return UserModel(**user).model_dump(exclude={"password"})
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -111,10 +115,10 @@ async def getUser(
 
 
 @router.put("/{user_id}", status_code=status.HTTP_200_OK)
-async def updateUser(
+async def update_user(
     user_id: Annotated[str, Path(description="ID of the user to update")],
-    updated_user: UserSchema,
-    current_user: Annotated[UserSchema, Depends(get_current_user)],
+    updated_user: UserModel,
+    current_user: Annotated[UserModel, Depends(get_current_user)],
 ):
     """
     Update a user's details.
@@ -155,9 +159,9 @@ async def updateUser(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deleteUser(
+async def delete_user(
     user_id: Annotated[str, Path(description="ID of the user to delete")],
-    current_user: Annotated[UserSchema, Depends(get_current_user)],
+    current_user: Annotated[UserModel, Depends(get_current_user)],
 ):
     """
     Delete a user by ID.

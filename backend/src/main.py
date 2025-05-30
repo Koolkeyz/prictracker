@@ -3,10 +3,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from routers.users import router as UsersRouter
-from routers.auth import router as AuthRouter
-from routers.config import router as ConfigRouter
-from helpers.db import client
+
+# from routers.users import router as UsersRouter
+# from routers.auth import router as AuthRouter
+# from routers.config import router as ConfigRouter
+from .auth.controller import router as AuthRouter
+from .users.controller import router as UsersRouter
+from .config.controller import router as ConfigRouter
+from .helpers.db import client
 
 load_dotenv()
 
