@@ -1,7 +1,7 @@
 """This file contains the configurations for the logger."""
 
 import logging
-from backend.config import get_settings
+from .settings import get_settings
 from uvicorn.logging import DefaultFormatter
 
 
