@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "app.css": "tailwindcss"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "name=\"([^\"]+)\""
+        ],
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/site": true,
+        "**/static": true,
+    }
+}
