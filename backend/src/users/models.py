@@ -29,17 +29,25 @@ class UserModel(BaseModel):
     )
     email: EmailStr = Field(..., description="Email address of the user")
     first_name: str = Field(
-        ..., min_length=2, max_length=50, description="First name of the user"
+        ..., min_length=2, max_length=50, description="First name of the user",
+        alias="firstName"
     )
     last_name: str = Field(
         ..., min_length=2, max_length=50, description="Last name of the user"
+        , alias="lastName"
     )
     force_password_change: bool = Field(
-        default=False, description="Force user to change password on next login"
+        default=False, description="Force user to change password on next login",
+        alias="forcePasswordChange"
     )
     created_at: Optional[datetime] = Field(
         default_factory=lambda: datetime.now(),
         description="Timestamp when the product was added",
+        alias="createdAt"
+    )
+    avatar: Optional[str] = Field(
+        None, description="Avatar URL of the user",
+        alias="avatar"
     )
 
 
@@ -49,11 +57,18 @@ class UserUpdateSchema(BaseModel):
     )
     email: Optional[EmailStr] = Field(None, description="Email address of the user")
     first_name: Optional[str] = Field(
-        None, min_length=2, max_length=50, description="First name of the user"
+        None, min_length=2, max_length=50, description="First name of the user",
+        alias="firstName"
     )
     last_name: Optional[str] = Field(
-        None, min_length=2, max_length=50, description="Last name of the user"
+        None, min_length=2, max_length=50, description="Last name of the user",
+        alias="lastName"
     )
     force_password_change: Optional[bool] = Field(
-        None, description="Force user to change password on next login"
+        None, description="Force user to change password on next login",
+        alias="forcePasswordChange"
+    )
+    avatar: Optional[str] = Field(
+        None, description="Avatar URL of the user",
+        alias="avatar"
     )

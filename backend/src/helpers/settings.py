@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     MONGO_DB: str # name of the database
     JWT_SECRET: str # secret key for JWT
     JWT_ALGORITHM: Optional[str] # algorithm for JWT
+    APP_HOST: str # host for the application
 
     class Config:
         env_file = ".env"

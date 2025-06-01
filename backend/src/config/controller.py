@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from ..helpers.db import db
 from .models import ConfigModel
+from .service import get_user_agents as get_user_agents_service
+from .service import get_proxy_servers as get_proxy_servers_service
 
 router = APIRouter()
 
@@ -16,15 +18,13 @@ async def get_user_agents():
     Retrieve the list of user agents.
     """
     try:
-        configs_db = await db.get_collection("configs").find_one({"_id": "default"})
-        if not configs_db:
+        configs_dict = await get_user_agents_service()
+        if not configs_dict:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No user agents found",
             )
-
-        configs = ConfigModel(**configs_db)
-
+        configs = ConfigModel(**configs_dict)
         return configs
     except Exception as e:
         raise HTTPException(
@@ -56,4 +56,30 @@ async def update_user_agents(user_agents: list[str]):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while updating user agents: {str(e)}",
+        )
+
+
+@router.get(
+    "/proxy-servers",
+    tags=["Configuration"],
+    response_model=ConfigModel,
+    response_model_exclude={"user_agents"},
+)
+async def get_proxy_servers():
+    """
+    Retrieve the list of proxy servers.
+    """
+    try:
+        configs_dict = await get_proxy_servers_service()
+        if not configs_dict:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No proxy servers found",
+            )
+        configs = ConfigModel(**configs_dict)
+        return configs
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while retrieving proxy servers: {str(e)}",
         )

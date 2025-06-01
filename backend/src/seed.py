@@ -1,19 +1,22 @@
-from helpers.db import db
-from auth.service import get_password_hash
-from users.models import UserModel
-
+from .auth.service import get_password_hash
+from .helpers.db import db
+from .users.models import UserModel
+from .helpers.db import db
 
 
 async def create_user():
     user = UserModel(
-        username="adrian.gookool22",
+        username="adrian.gookool",
         email="amgookool@hotmail.com",
         password=get_password_hash("PriceTracker"),
         first_name="Adrian",
         last_name="Gookool",
+        role="admin",
     )
     # Insert the user into the database
-    result = await db.get_collection("users").insert_one(user.model_dump(by_alias=True))
+    result = await db.get_collection("users").insert_one(
+        user.model_dump(by_alias=True, exclude={"id"})
+    )
     if result.acknowledged:
         print(f"User created with ID: {result.inserted_id}")
     else:
@@ -37,10 +40,9 @@ async def seed_user_agents():
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.3",
     ]
     # Insert user agents into the database
-    result = await db.get_collection("configs").insert_one({
-        "_id": "default",
-        "user_agents": user_agents
-    })
+    result = await db.get_collection("configs").insert_one(
+        {"_id": "default", "userAgents": user_agents}
+    )
     if result.acknowledged:
         print("User agents seeded successfully.")
     else:

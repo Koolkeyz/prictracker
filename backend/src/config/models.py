@@ -24,8 +24,10 @@ class ConfigModel(BaseModel):
     user_agents: Optional[List[str]] = Field(
         default_factory=list,
         description="List of user agents to be used for requests",
+        alias="userAgents",
     )
     proxy_servers: Optional[List[str]] = Field(
         default_factory=list,
         description="List of proxy servers to be used for requests",
+        alias="proxyServers",
     )
