@@ -15,6 +15,13 @@
         "**/Thumbs.db": true,
         "**/__pycache__": true,
         "**/site": true,
-        "**/static": true,
-    }
+        "**/static": false,
+    },
+    "tailwindCSS.classAttributes": [
+        "class",
+        "className",
+        "ngClass",
+        "class:list",
+        "name",
+    ],
 }
