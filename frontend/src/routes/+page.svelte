@@ -85,7 +85,6 @@
 			}, 3000);
 
 			setTimeout(() => {
-				isSigningIn = false; // Reset the signing in state
 				goto('/dashboard'); // Redirect to dashboard or another page after successful login
 			}, 4000);
 		} catch (error) {
@@ -122,7 +121,9 @@
 			// Reset the form if needed
 			// loginForm.email = '';
 			// loginForm.password = '';
-
+			setTimeout(() => {
+				isSigningIn = false; // Reset the signing in state
+			}, 6000);
 		}
 	}
 </script>
