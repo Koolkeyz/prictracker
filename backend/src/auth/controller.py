@@ -1,31 +1,32 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Dict
 
 from fastapi import (
     APIRouter,
     Body,
     Depends,
     HTTPException,
+    Path,
+    Request,
     Response,
     status,
-    Request,
-    Path,
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
+from ..helpers.logger import auth_logger, log_error, log_request
 from ..helpers.settings import get_settings
 from ..users.models import UserModel
-from .models import Token, PasswordResetModel, PasswordResetChangeModel
+from .models import PasswordResetChangeModel, PasswordResetModel, Token
 from .service import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
     create_access_token,
     create_reset_token,
-    validate_token,
-    validate_reset_token,
     get_user_by_email,
     update_user_password,
+    validate_reset_token,
+    validate_token,
 )
 
 router = APIRouter()
@@ -39,7 +40,7 @@ async def get_current_user(
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
+            detail="Invalid authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
@@ -52,16 +53,22 @@ async def get_current_user(
 
 @router.post("/token", response_model=Token, tags=["Authentication"])
 async def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], response: Response
-) -> Token:
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    response: Response,
+    request: Request,
+) -> Dict[str, str] | Token:
     try:
+        auth_logger.info(f"Login attempt for user: {form_data.username}")
+
         user = await authenticate_user(form_data.username, form_data.password)
         if not user:
+            auth_logger.warning(f"Failed login attempt for user: {form_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
         access_token_expiration = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data=user.model_dump(),
@@ -85,14 +92,19 @@ async def login(
         response.headers["Authorization"] = f"Bearer {access_token}"
         response.headers["Vary"] = "Origin"
 
+        auth_logger.info(f"Successful login for user: {form_data.username}")
         return {
             "access_token": token_data.access_token,
             "token_type": token_data.token_type,
         }
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401 Unauthorized)
+        raise
     except Exception as e:
+        log_error(auth_logger, e, f"Login error for user: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="Internal server error during login",
         )
 
 

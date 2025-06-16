@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str # secret key for JWT
     JWT_ALGORITHM: Optional[str] # algorithm for JWT
     APP_HOST: str # host for the application
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    ADMIN_EMAIL: str
 
     class Config:
         env_file = ".env"
@@ -21,4 +24,3 @@ def get_settings() -> Settings:
     Get settings from environment variables.
     """
     return Settings()
-
