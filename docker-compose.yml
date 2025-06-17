@@ -9,20 +9,8 @@ services:
       - "8000:80"
     depends_on:
       - pricetracker-db
-    environment:
-      - MONGO_URI=mongodb://mongo:mongo@pricetracker-db:27017/
-      - MONGO_DB=pricetracker
-      - APP_HOST=0.0.0.0
-      - JWT_SECRET=${JWT_SECRET:-supersecretkey}
-      - JWT_ALGORITHM=HS256
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@pricetracker.com}
-      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USERNAME=${SMTP_USERNAME:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SENDER_EMAIL=${SENDER_EMAIL:-noreply@pricetracker.com}
+    env_file:
+      - .env
     volumes:
       - ./backend/logs:/app/backend/logs
   

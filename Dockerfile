@@ -1,6 +1,6 @@
 # Multi-stage build Dockerfile for PriceTracker
 # Stage 1: Build the SvelteKit frontend
-FROM node:lts-jod AS frontend-builder
+FROM node:lts-alpine3.22 AS frontend-builder
 
 # Set working directory for frontend
 WORKDIR /app/frontend
