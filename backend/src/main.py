@@ -1,10 +1,11 @@
 import os
 import time
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse
 
 
 from .auth.controller import router as AuthRouter
@@ -27,12 +28,16 @@ load_dotenv()
 logger = main_logger
 environment = get_settings()
 
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-frontend_dir = os.path.join(os.path.dirname(backend_dir), "frontend")
+# Get the absolute path of the backend directory
+backend_dir = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+)
 site_directory = os.path.join(backend_dir, "site")
 static_directory = os.path.join(backend_dir, "static")
 
-
+# Log the site directory for debugging
+print(f"Site directory: {site_directory}")
+print(f"Site directory exists: {os.path.exists(site_directory)}")
 
 
 @asynccontextmanager
@@ -48,31 +53,33 @@ async def lifespan(app: FastAPI):
         # Note: AsyncMongoClient doesn't have aconnect() method
         # It connects automatically when a query is executed
         log_startup_event(logger, "MongoDB client initialized")
-        
+
         log_startup_event(logger, "Checking for user agents in the database")
         if not await check_if_user_agents_exist():
-            log_startup_event(logger, "No user agents found", "Adding default user agents")
+            log_startup_event(
+                logger, "No user agents found", "Adding default user agents"
+            )
             await add_user_agents()
             log_startup_event(logger, "Default user agents added successfully")
         else:
             log_startup_event(logger, "User agents already exist in the database")
-        
+
         log_startup_event(logger, "Checking for admin user in the database")
         if not await check_if_user_exists(environment.ADMIN_USERNAME):
             log_startup_event(
-                logger, 
-                f"Admin user '{environment.ADMIN_USERNAME}' does not exist", 
-                "Creating admin user"
+                logger,
+                f"Admin user '{environment.ADMIN_USERNAME}' does not exist",
+                "Creating admin user",
             )
             await create_user()
             log_startup_event(
-                logger, 
-                f"Admin user '{environment.ADMIN_USERNAME}' created successfully"
+                logger,
+                f"Admin user '{environment.ADMIN_USERNAME}' created successfully",
             )
         else:
             log_startup_event(
-                logger, 
-                f"Admin user '{environment.ADMIN_USERNAME}' already exists in the database"
+                logger,
+                f"Admin user '{environment.ADMIN_USERNAME}' already exists in the database",
             )
 
         yield
@@ -105,50 +112,34 @@ pricetracker.add_middleware(
 )
 
 
-# Request logging middleware
-@pricetracker.middleware("http")
-async def log_requests(request: Request, call_next):
-    """
-    Middleware to log all HTTP requests in uvicorn style.
-    """
-    start_time = time.time()
-    
-    # Skip logging for static files and health checks
-    if request.url.path.startswith(("/static", "/favicon", "/_app")):
-        response = await call_next(request)
-        return response
-    
-    # Get client IP
-    client_ip = request.client.host if request.client else "unknown"
-    
-    # Process request
-    response = await call_next(request)
-    
-    # Calculate processing time
-    process_time = time.time() - start_time
-    
-    # Log the request
-    log_request(
-        logger=main_logger,
-        method=request.method,
-        path=request.url.path,
-        status_code=response.status_code,
-        process_time=process_time,
-        client_ip=client_ip
-    )
-    
-    return response
-
-
 pricetracker.include_router(AuthRouter, prefix="/api", tags=["Authentication"])
 pricetracker.include_router(UsersRouter, prefix="/api/users", tags=["Users"])
 pricetracker.include_router(ConfigRouter, prefix="/api/config", tags=["Configuration"])
 pricetracker.include_router(ProductsRouter, prefix="/api/products", tags=["Products"])
 
-
-# Mount the frontend build directory
+# Mount the entire site directory as static files (this serves all SvelteKit assets)
 pricetracker.mount(
-    "/",
-    StaticFiles(directory=site_directory, html=True),
-    name="site",
+    "/_app",
+    StaticFiles(directory=os.path.join(site_directory, "_app")),
+    name="static_app",
 )
+
+# Serve the root path
+@pricetracker.get("/")
+async def serve_root():
+    return FileResponse(os.path.join(site_directory, "fallback.html"))
+
+# Serve the SPA and its assets
+@pricetracker.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # Paths that should be handled by the API
+    if full_path.startswith("api/"):
+        return {"detail": "Not Found"}
+    
+    # Check if the requested path is a file in the site directory
+    requested_path = os.path.join(site_directory, full_path)
+    if os.path.isfile(requested_path):
+        return FileResponse(requested_path)
+    
+    # For all other paths, return the SPA entry point (fallback.html)
+    return FileResponse(os.path.join(site_directory, "fallback.html"))
