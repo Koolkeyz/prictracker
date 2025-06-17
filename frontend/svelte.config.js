@@ -5,16 +5,23 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
+		// adapter: adapter({
+		// 	pages: '../backend/site',
+		// 	assets: '../backend/site',
+		// 	fallback: 'fallback.html',
+		// 	precompress: false,
+		// 	strict: true
+		// }),
 		adapter: adapter({
-			pages: '../backend/site',
-			assets: '../backend/site',
+			pages: 'build',
+			assets: 'build',
 			fallback: 'fallback.html',
 			precompress: false,
 			strict: true
 		}),
 		alias: {
 			$components: 'src/components',
-			$schemas: 'src/lib/schemas',
+			$schemas: 'src/lib/schemas'
 		}
 	}
 };
