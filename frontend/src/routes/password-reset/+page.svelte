@@ -1,94 +1,146 @@
-<script module lang="ts">
-	import { z } from 'zod';
-
-	const passwordResetFormSchema = z.object({
-		email: z.string().email('Invalid email address')
-	});
-</script>
-
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { Button, Card, Heading, Helper, Input, Label, P, Span, Toast } from 'flowbite-svelte';
+	import {
+		ArrowLeftOutline,
+		ArrowRightOutline,
+		CheckCircleSolid,
+		CloseOutline,
+		EnvelopeSolid,
+		ExclamationCircleSolid,
+		LockSolid
+	} from 'flowbite-svelte-icons';
+	import { z } from 'zod';
 	import type { PageData } from './$types';
-	import { toast } from 'svelte-sonner';
-	import FormMessage, { type FormMessageType } from '$components/ui/FormMessage.svelte';
+
 	let { data }: { data: PageData } = $props();
 
-	const passwordResetForm = $state({
-		email: '',
-		error: {
-			email: null as FormMessageType | null
+	let email = $state<string | undefined>(undefined);
+	let emailError = $state<string | undefined>(undefined);
+
+	// State for showing/hiding toast notifications
+	let showToast = $state(false);
+	// State for toast message and type
+	let toastMessage = $state('Password Reset email sent!');
+	let toastType = $state<'error' | 'success'>('success');
+
+	const handleSubmit = async () => {
+		const emailSchema = z
+			.string()
+			.min(1, { message: 'Email is required' })
+			.email({ message: 'Invalid Email address' });
+		const result = emailSchema.safeParse(email);
+		if (!result.success) {
+			emailError = result.error.errors.at(0)?.message;
+			return;
 		}
-	});
-
-	const submitPasswordReset = async (e: MouseEvent) => {
-		e.preventDefault();
 		try {
-			const parsedForm = passwordResetFormSchema.parse({
-				email: passwordResetForm.email
-			});
-
 			const response = await fetch(`/api/password-reset`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					Accept: 'application/json'
 				},
-				body: JSON.stringify(parsedForm),
+				body: JSON.stringify({ email: email }),
 				credentials: 'include'
 			});
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.detail || 'Password reset failed');
+				throw new Error(errorData.detail || 'Failed to send password reset email');
 			}
-
-            toast.success('Password reset link sent to your email');
-
+			toastMessage = 'Password reset email sent successfully!';
+			toastType = 'success';
 		} catch (error) {
-			if (error instanceof z.ZodError) {
-				error.errors.forEach((err) => {
-					if (err.path.includes('email')) {
-						passwordResetForm.error.email = {
-							type: 'error',
-							message: err.message
-						};
-					}
-				});
+			toastType = 'error';
+			if (error instanceof Error) {
+				console.error('Error sending password reset email:', error.message);
+				toastMessage = error.message;
 			} else {
-				if (error instanceof Error) toast.error(error.message);
-				else toast.error('An unexpected error occurred');
+				console.error('Unexpected error:', error);
+				toastMessage = 'An unexpected error occurred';
 			}
 		} finally {
-			// Reset the form after submission
-			passwordResetForm.email = '';
-			passwordResetForm.error.email = null;
+			showToast = true;
+			setTimeout(() => {
+				showToast = false;
+			}, 5000);
 		}
 	};
 </script>
 
-<main class="max-w-screen min-h-screen place-content-center place-items-center">
-	<!-- Login Form -->
-	<form class={['w-sm lg:w-md', 'bg-base-300 rounded-4xl px-12 py-10 shadow-2xl']}>
-		<fieldset class="fieldset px-4">
-			<legend class="fieldset-legend pb-2.5 pt-4 text-xl">Password Reset</legend>
-			<p class="text-accent text-nowrap pb-4 text-xs">
-				Forgot your password? Reset it by entering your email below
-			</p>
-			<label class="label ml-1.5" for="email">Email</label>
-			<input
-				id="email"
-				type="email"
-				class="input w-full"
-				placeholder="Enter email"
-				bind:value={passwordResetForm.email}
+<svelte:head>
+	<title>Password Reset - PriceTracker</title>
+	<meta name="description" content="Reset your password for your PriceTracker account" />
+</svelte:head>
+
+<Toast
+	dismissable={false}
+	color={toastType === 'success' ? 'emerald' : 'rose'}
+	position="top-right"
+	toastStatus={showToast}
+>
+	{#snippet icon()}
+		{#if toastType === 'success'}
+			<CheckCircleSolid class=" h-6 w-6" />
+		{:else}
+			<ExclamationCircleSolid class=" h-6 w-6" />
+		{/if}
+	{/snippet}
+	{toastMessage}
+</Toast>
+
+<main
+	class="flex min-h-screen w-full items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900"
+>
+	<Card class="p-4 sm:p-6" size="lg">
+		<Span class="flex items-center text-gray-500 dark:text-gray-400 cursor-pointer max-w-fit">
+			<ArrowLeftOutline
+				class="size-8"
+				onclick={() => {
+					goto('/', { replaceState: true });
+				}}
 			/>
-			{#if passwordResetForm.error.email}
-				<FormMessage
-					type={passwordResetForm.error.email.type}
-					message={passwordResetForm.error.email.message}
-				/>
-			{/if}
-			<button class="btn btn-primary mt-4 text-base" onclick={submitPasswordReset}
-				>Reset Password</button
+			Back
+		</Span>
+		<section id="card-header" class="py-4">
+			<Heading tag="h2" class="text-primary-600 flex items-center justify-start gap-0.5"
+				>Reset Password <LockSolid class="text-primary-800 size-10" /></Heading
 			>
-		</fieldset>
-	</form>
+			<P class="mt-2 max-w-xl text-gray-600 dark:text-gray-400">
+				<Span>
+					Enter your email address below and an email will be sent for you to reset your password.
+				</Span>
+				<Span>
+					Make sure to check your spam or junk folder if you don’t see it within a few minutes.
+				</Span>
+			</P>
+		</section>
+		<Label class="space-y-1" for="email">
+			<Span class="ml-1">Email Address</Span>
+			<Input
+				type="email"
+				placeholder="example@email.com"
+				size="md"
+				class="ps-9"
+				id="email"
+				bind:value={email}
+			>
+				{#snippet left()}
+					<EnvelopeSolid class="h-5 w-5" />
+				{/snippet}
+			</Input>
+			{#if emailError}
+				<Helper class="mt-2 flex items-center" color="red">
+					<CloseOutline class="mr-1 inline-block" />
+					<Span class="text-base">
+						{emailError}
+					</Span>
+				</Helper>
+			{/if}
+		</Label>
+		<Button class="mt-4" type="button" color="secondary" size="xl" onclick={handleSubmit}>
+			<Span>Send Reset Link</Span>
+			<ArrowRightOutline class="ms-2 size-6" />
+		</Button>
+	</Card>
 </main>

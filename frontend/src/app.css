@@ -1,100 +1,42 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
+
 @plugin '@iconify/tailwind4' {
-	prefixes: cib, mdi,  svg-spinners;
+	prefixes: cib, mdi, svg-spinners;
 }
 
-@plugin "daisyui" {
-	themes: false;
+@plugin 'flowbite/plugin';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--color-primary-50: #fff5f2;
+	--color-primary-100: #fff1ee;
+	--color-primary-200: #ffe4de;
+	--color-primary-300: #ffd5cc;
+	--color-primary-400: #ffbcad;
+	--color-primary-500: #fe795d;
+	--color-primary-600: #ef562f;
+	--color-primary-700: #eb4f27;
+	--color-primary-800: #cc4522;
+	--color-primary-900: #a5371b;
+
+	--color-secondary-50: #f0f9ff;
+	--color-secondary-100: #e0f2fe;
+	--color-secondary-200: #bae6fd;
+	--color-secondary-300: #7dd3fc;
+	--color-secondary-400: #38bdf8;
+	--color-secondary-500: #0ea5e9;
+	--color-secondary-600: #0284c7;
+	--color-secondary-700: #0369a1;
+	--color-secondary-800: #075985;
+	--color-secondary-900: #0c4a6e;
 }
 
-@plugin "daisyui/theme" {
-	name: 'dark';
-	default: true;
-	prefersdark: true;
-	color-scheme: 'dark';
-	/* Deep dark background with slight blue tint for a modern tech feel */
-	--color-base-100: oklch(18% 0.025 260);
-	--color-base-200: oklch(15% 0.025 260);
-	--color-base-300: oklch(12% 0.025 260);
-	--color-base-content: oklch(95% 0.01 260);
-	/* Vibrant green for primary actions - savings/deals focused */
-	--color-primary: oklch(70% 0.18 145);
-	--color-primary-content: oklch(10% 0.01 145);
-	/* Secondary purple - tech and modern feel */
-	--color-secondary: oklch(65% 0.15 290);
-	--color-secondary-content: oklch(98% 0.01 290);
-	/* Bright orange accent for special deals and price drops */
-	--color-accent: oklch(75% 0.2 60);
-	--color-accent-content: oklch(10% 0.02 60);
-	/* Neutral dark colors for backgrounds */
-	--color-neutral: oklch(25% 0.02 260);
-	--color-neutral-content: oklch(90% 0.01 260);
-	/* Blue info for non-critical information */
-	--color-info: oklch(70% 0.15 230);
-	--color-info-content: oklch(10% 0.01 230);
-	/* Green success for confirmations */
-	--color-success: oklch(75% 0.18 145);
-	--color-success-content: oklch(10% 0.01 145);
-	/* Yellow warning for notices */
-	--color-warning: oklch(80% 0.18 85);
-	--color-warning-content: oklch(10% 0.02 85);
-	/* Traditional red for errors */
-	--color-error: oklch(70% 0.2 20);
-	--color-error-content: oklch(98% 0.01 20);
-	/* Rounded corners as requested */
-	--radius-selector: 0.5rem;
-	--radius-field: 1rem;
-	--radius-box: 0.8rem;
-	--size-selector: 0.25rem;
-	--size-field: 0.25rem;
-	--border: 1px;
-	--depth: 0.1;
-	--noise: 0;
-}
+@source "../node_modules/flowbite-svelte/dist";
+@source "../node_modules/flowbite-svelte-icons/dist";
 
-@plugin "daisyui/theme" {
-	name: 'light';
-	default: false;
-	prefersdark: false;
-	color-scheme: 'light';
-	/* Light clean background with very slight blue tint */
-	--color-base-100: oklch(98% 0.01 260);
-	--color-base-200: oklch(93% 0.01 260);
-	--color-base-300: oklch(88% 0.02 260);
-	--color-base-content: oklch(18% 0.02 260);
-	/* Vibrant green primary matching dark theme */
-	--color-primary: oklch(65% 0.17 145);
-	--color-primary-content: oklch(98% 0.01 145);
-	/* Secondary purple - balanced brightness for light mode */
-	--color-secondary: oklch(60% 0.13 290);
-	--color-secondary-content: oklch(98% 0.01 290);
-	/* Bright orange accent for special deals - slightly toned down for light mode */
-	--color-accent: oklch(70% 0.18 60);
-	--color-accent-content: oklch(98% 0.01 60);
-	/* Light neutral colors */
-	--color-neutral: oklch(90% 0.01 260);
-	--color-neutral-content: oklch(18% 0.02 260);
-	/* Matching info blue */
-	--color-info: oklch(65% 0.13 230);
-	--color-info-content: oklch(98% 0.01 230);
-	/* Success green */
-	--color-success: oklch(70% 0.15 145);
-	--color-success-content: oklch(98% 0.01 145);
-	/* Warning yellow */
-	--color-warning: oklch(75% 0.17 85);
-	--color-warning-content: oklch(20% 0.02 85);
-	/* Traditional red for errors */
-	--color-error: oklch(65% 0.18 20);
-	--color-error-content: oklch(98% 0.01 20);
-	/* Matching rounded corners from dark theme */
-	--radius-selector: 0.5rem;
-	--radius-field: 1rem;
-	--radius-box: 0.8rem;
-	--size-selector: 0.25rem;
-	--size-field: 0.25rem;
-	--border: 1px;
-	--depth: 0.05;
-	--noise: 0;
+@layer base {
+	/* disable chrome cancel button */
+	input[type='search']::-webkit-search-cancel-button {
+		display: none;
+	}
 }

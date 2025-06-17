@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Icon from '$components/ui/Icon.svelte';
+	import Icon from '$components/Icon.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -19,7 +19,7 @@
 		e.preventDefault();
 		console.log('Validating ASIN:', addProductForm.amazonASIN);
 		// Basic validation for ASIN format (10 alphanumeric characters)
-		const result =  /^[A-Z0-9]{10}$/.test(addProductForm.amazonASIN || '');
+		const result = /^[A-Z0-9]{10}$/.test(addProductForm.amazonASIN || '');
 	};
 
 	$effect(() => {

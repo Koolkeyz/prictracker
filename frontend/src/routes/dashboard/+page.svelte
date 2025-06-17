@@ -4,10 +4,9 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<header class="container mx-auto flex flex-row items-center justify-between">
-	<h1 class="text-info text-3xl font-medium self-start">Tracked Products</h1>
+<svelte:head>
+	<title>Dashboard - PriceTracker</title>
+	<meta name="description" content="Dashboard for PriceTracker" />
+</svelte:head>
 
-	<a href="/dashboard/products/add" class="btn btn-md btn-soft btn-outline btn-link rounded-lg"
-		>Add Product</a
-	>
-</header>
+<h1>Dashboard Content</h1>

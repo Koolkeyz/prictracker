@@ -1,44 +1,26 @@
+import { error, redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
-import { UserModel } from '$lib/models';
-import { redirect } from '@sveltejs/kit';
+import { UserSchema } from '$schemas/user.schema';
 
 export const load = (async ({ fetch }) => {
-    const getUser = async () => {
-        try {
-            const response = await fetch('/api/auth-user',
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    credentials: 'include'
-                }
-            )
+	// Fetch the authenticated user data
+	const response = await fetch('/api/auth-user', {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json'
+		},
+		credentials: 'include'
+	});
 
-            if (!response.ok) {
-                redirect(302, '/')
-            }
+	if (!response.ok) redirect(303, '/');
 
-            const userData = await response.json();
-            const user = UserModel.parse(userData);
+	const userData = await response.json();
 
-            return user;
-
-        } catch (error) {
-            if (error instanceof Error) {
-                console.error('Error fetching user:', error.message);
-                throw error;
-            } else {
-                console.error('An unexpected error occurred while fetching user data');
-                throw new Error('An unexpected error occurred');
-            }
-        }
-    }
-
-    const authenticatedUser = await getUser();
-
-
-
-    return { authenticatedUser };
+	const authUser = UserSchema.safeParse(userData);
+	if (!authUser.success) error(500, 'Invalid user data format');
+	
+	return {
+		authUser: authUser.data
+	};
 }) satisfies LayoutLoad;

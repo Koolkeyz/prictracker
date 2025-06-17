@@ -1,11 +1,13 @@
 <script lang="ts" module>
-	import { z } from 'zod';
+	import { z, ZodError, type ZodIssue } from 'zod';
 
-	const loginFormSchema = z.object({
-		email: z.string(),
-		password: z.string().min(6, 'Password must be at least 6 characters long')
+	// Zod Schema for validating login form data
+	const loginSchema = z.object({
+		username: z.string().min(1, 'Username is required'),
+		password: z.string().min(6, 'Password must be at least 6 characters')
 	});
 
+	// API request function to handle sign-in
 	const signInRequest = async (data: {
 		body: {
 			username: string;
@@ -45,129 +47,204 @@
 </script>
 
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import FormMessage, { type FormMessageType } from '$components/ui/FormMessage.svelte';
-	import Icon from '$components/ui/Icon.svelte';
 	import { goto } from '$app/navigation';
-	const loginForm = $state({
-		email: '',
-		password: '',
-		error: {
-			email: null as FormMessageType | null,
-			password: null as FormMessageType | null
+	import Icon from '$components/Icon.svelte';
+	import { A, Button, Card, Heading, Input, Label, P, Span, Toast } from 'flowbite-svelte';
+	import {
+		CheckCircleSolid,
+		EyeOutline,
+		EyeSlashOutline,
+		InfoCircleOutline,
+		LockSolid,
+		UserCircleSolid,
+		ExclamationCircleSolid
+	} from 'flowbite-svelte-icons';
+
+	// Login Form State
+	let loginForm = $state({
+		username: undefined as string | undefined,
+		password: undefined as string | undefined,
+		errors: {
+			username: undefined as undefined | ZodIssue,
+			password: undefined as undefined | ZodIssue
 		}
 	});
 
+	// State for determining if the user is signing in
 	let isSigningIn = $state(false);
+	// State for showing/hiding password
+	let showPassword = $state(false);
+	// State for showing/hiding toast notifications
+	let showToast = $state(false);
+	// State for toast message and type
+	let toastMessage = $state('Login successful!');
+	let toastType = $state<'error' | 'success'>('success');
 
-	async function signInUser(e: MouseEvent) {
+	// Function to handle form submission
+	const handleSubmit = async (e: Event) => {
 		e.preventDefault();
-		isSigningIn = true; // Set the signing in state to true
-		try {
-			const parsedForm = loginFormSchema.parse(loginForm);
 
+		try {
+			const validatedData = loginSchema.parse(loginForm);
+			isSigningIn = true;
 			await signInRequest({
 				body: {
-					username: parsedForm.email,
-					password: parsedForm.password
+					password: validatedData.password,
+					username: validatedData.username
 				}
 			});
 
-			// Proceed with login logic, e.g., API call
-			setTimeout(() => {
-				toast.success('Login successful!', {
-					description: 'You have successfully logged in.',
-					dismissable: true,
-					duration: 2000
-				});
-				loginForm.error.email = null; // Clear email error
-				loginForm.error.password = null; // Clear password error
-			}, 3000);
+			// On Successful login, show the toast
+			toastType = 'success';
+			showToast = true;
 
 			setTimeout(() => {
-				goto('/dashboard'); // Redirect to dashboard or another page after successful login
-			}, 4000);
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				error.errors.forEach((err) => {
-					if (err.path.includes('email')) {
-						loginForm.error.email = {
-							type: 'error',
-							message: err.message
-						};
-					} else if (err.path.includes('password')) {
-						if (err.code === 'too_small') {
-							loginForm.error.password = {
-								type: 'error',
-								message: 'Password must be at least 6 characters long'
-							};
-						} else {
-							loginForm.error.password = {
-								type: 'error',
-								message: err.message
-							};
-						}
-					}
-				});
-			} else if (error instanceof Error) {
-				// Handle other errors, such as network issues or server errors
-				toast.error(error.message, {
-					description: 'Please check your credentials and try again.'
+				isSigningIn = false;
+			}, 1000); // Simulate a short delay for the toast
+
+			setTimeout(() => {
+				goto('/dashboard');
+			}, 1000);
+		} catch (err) {
+			console.error('Error occurred during login:');
+			if (err instanceof ZodError) {
+				err.errors.forEach((error) => {
+					console.error(
+						`Zod Error: ${error.code} - ${error.message} on field ${error.path.join('.')}`
+					);
+					if (error.path.at(0) === 'username') loginForm.errors.username = error;
+					else if (error.path.at(0) === 'password') loginForm.errors.password = error;
 				});
 			} else {
-				toast.error('An unexpected error occurred. Please try again later.');
+				const error = err as Error;
+				console.error(`Error: ${error.message}`);
+				toastMessage = error.message || 'An unexpected error occurred. Please try again.';
+				toastType = 'error';
+				showToast = true;
 			}
-		} finally {
-			// Reset the form if needed
-			// loginForm.email = '';
-			// loginForm.password = '';
 			setTimeout(() => {
-				isSigningIn = false; // Reset the signing in state
-			}, 6000);
+				isSigningIn = false;
+			}, 800); // Simulate a short delay for the toast
+		} finally {
+			setTimeout(() => {
+				showToast = false;
+			}, 5000); // Hide toast after 3 seconds
 		}
-	}
+	};
 </script>
 
-<main class="max-w-screen min-h-screen place-content-center place-items-center">
-	{#if isSigningIn}
-		<section>
-			<Icon name="svg-spinners--blocks-shuffle-3" class="text-primary size-80 place-self-center" />
-		</section>
-	{:else}
-		<!-- Login Form -->
-		<form class={['w-sm lg:w-md', 'bg-base-300 rounded-4xl px-12 py-10 shadow-2xl']}>
-			<fieldset class="fieldset px-4">
-				<legend class="fieldset-legend py-4 text-xl">Login</legend>
-				<label class="label" for="email">Email</label>
-				<input
-					id="email"
-					type="email"
-					class="input w-full"
-					placeholder="Email"
-					bind:value={loginForm.email}
-				/>
-				{#if loginForm.error.email}
-					<!-- <p class="mt-1 text-sm text-red-500">{loginForm.error.email}</p> -->
-					<FormMessage type={loginForm.error.email.type} message={loginForm.error.email.message} />
-				{/if}
-				<label class="label" for="password">Password</label>
-				<input
-					id="password"
-					type="password"
-					class="input w-full"
-					placeholder="Password"
-					bind:value={loginForm.password}
-				/>
-				{#if loginForm.error.password}
-					<FormMessage
-						type={loginForm.error.password.type}
-						message={loginForm.error.password.message}
-					/>
-				{/if}
+<svelte:head>
+	<title>Login - PriceTracker</title>
+	<meta name="description" content="Login to your PriceTracker account" />
+</svelte:head>
 
-				<a class="link link-hover" href="/password-reset">Forgot password?</a>
-				<button class="btn btn-primary mt-4 text-base" onclick={signInUser}>Login</button>
-			</fieldset>
-		</form>
+<Toast
+	dismissable={false}
+	color={toastType === 'success' ? 'emerald' : 'rose'}
+	position="top-right"
+	toastStatus={showToast}
+>
+	{#snippet icon()}
+		{#if toastType === 'success'}
+			<CheckCircleSolid class=" h-6 w-6" />
+		{:else}
+			<ExclamationCircleSolid class=" h-6 w-6" />
+		{/if}
+	{/snippet}
+	{toastMessage}
+</Toast>
+
+<main
+	class="flex min-h-screen w-full items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900"
+>
+	{#if isSigningIn}
+		<Icon
+			name="svg-spinners--blocks-shuffle-3"
+			class="text-primary-700 size-80 place-self-center"
+		/>
+	{:else}
+		<div class="w-full max-w-full place-content-center place-items-center space-y-8">
+			<!-- Logo/Brand Section -->
+			<div class="text-center">
+				<Heading tag="h1">PriceTracker</Heading>
+				<P align={'center'} class="mt-2 text-gray-600 dark:text-gray-400">
+					Track prices across multiple platforms
+				</P>
+			</div>
+
+			<!-- Login Card -->
+			<Card class="p-6 sm:p-8">
+				<form class="flex flex-col space-y-6" onsubmit={handleSubmit}>
+					<Heading tag="h4" class="text-gray-900 dark:text-white">Sign in to your account</Heading>
+
+					<Label id="username-label">
+						<Span italic>Username</Span>
+						<Input
+							type="text"
+							name="username"
+							placeholder="Enter your username"
+							bind:value={loginForm.username}
+							class="ps-10"
+						>
+							{#snippet left()}
+								<UserCircleSolid class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+							{/snippet}
+						</Input>
+						{#if loginForm.errors.username}
+							<div class="container mt-1.5 flex items-center gap-1 text-red-600 dark:text-red-400">
+								<InfoCircleOutline class="h-6 w-6 " />
+								<Span italic class="">
+									{loginForm.errors.username.message}
+								</Span>
+							</div>
+						{/if}
+					</Label>
+
+					<Label id="password-label">
+						<Span italic>Password</Span>
+						<Input
+							type={showPassword ? 'text' : 'password'}
+							name="password"
+							placeholder="••••••••"
+							required
+							bind:value={loginForm.password}
+							class="pe-10 ps-10"
+						>
+							{#snippet left()}
+								<LockSolid class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+							{/snippet}
+
+							{#snippet right()}
+								<button
+									type="button"
+									onclick={() => (showPassword = !showPassword)}
+									class="pointer-events-auto"
+								>
+									{#if showPassword}
+										<EyeSlashOutline class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+									{:else}
+										<EyeOutline class="h-5 w-5 text-gray-500 dark:text-gray-400" />
+									{/if}
+								</button>
+							{/snippet}
+						</Input>
+						{#if loginForm.errors.password}
+							<div class="container mt-1.5 flex items-center gap-1 text-red-600 dark:text-red-400">
+								<InfoCircleOutline class="h-6 w-6 " />
+								<Span italic class="">
+									{loginForm.errors.password.message}
+								</Span>
+							</div>
+						{/if}
+					</Label>
+
+					<div class="flex items-center justify-between">
+						<A href="/password-reset" class="text-sm">Forgot password?</A>
+					</div>
+
+					<Button type="submit" class="w-full" id="login-button">Sign in</Button>
+				</form>
+			</Card>
+		</div>
 	{/if}
 </main>

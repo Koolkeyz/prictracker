@@ -4,4 +4,7 @@
     let { data }: { data: PageData } = $props();
 </script>
 
-<h1>Configs</h1>
+<svelte:head>
+	<title>Platform Configuration - PriceTracker</title>
+	<meta name="description" content="Manage products you are tracking" />
+</svelte:head>

@@ -4,4 +4,7 @@
     let { data }: { data: PageData } = $props();
 </script>
 
-<h1>Users</h1>
+<svelte:head>
+	<title>User Management - PriceTracker</title>
+	<meta name="description" content="Manage users on the PriceTracker platform" />
+</svelte:head>
