@@ -126,6 +126,19 @@ async def get_user_by_email(email: str, db=db) -> UserModel | None:
         )
 
 
+async def get_user_by_id(user_id: str, db=db) -> UserModel | None:
+    try:
+        user = await db.get_collection("users").find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return None
+        return UserModel(**user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving user: {str(e)}",
+        )
+
+
 async def update_user_password(user: UserModel, new_password: str, db=db) -> UserModel:
     try:
         hashed_password = get_password_hash(new_password)
@@ -133,7 +146,7 @@ async def update_user_password(user: UserModel, new_password: str, db=db) -> Use
             {"_id": ObjectId(user.id)}, {"$set": {"password": hashed_password}}
         )
         user.password = hashed_password
-        return UserModel(**user)
+        return user
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

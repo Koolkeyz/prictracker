@@ -11,9 +11,15 @@ class Settings(BaseSettings):
     JWT_SECRET: str # secret key for JWT
     JWT_ALGORITHM: Optional[str] # algorithm for JWT
     APP_HOST: str # host for the application
-    ADMIN_USERNAME: str
-    ADMIN_PASSWORD: str
-    ADMIN_EMAIL: str
+    ADMIN_USERNAME: str # username for the admin account
+    ADMIN_PASSWORD: str # password for the admin account
+    ADMIN_EMAIL: str # email for the admin account
+    SMTP_HOST: str # SMTP server host
+    SMTP_PORT: str # SMTP server port
+    SMTP_USERNAME: str # SMTP server username
+    SMTP_PASSWORD: str # SMTP server password
+    SMTP_FROM_NAME: str # name to display in the "from" field of emails
+    SMTP_FROM_EMAIL: str # email address to use in the "from" field of emails
 
     class Config:
         env_file = ".env"

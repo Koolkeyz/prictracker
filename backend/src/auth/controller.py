@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Annotated, Dict
-
+from fastapi.templating import Jinja2Templates
 from fastapi import (
     APIRouter,
     Body,
@@ -14,6 +14,8 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
+from ..mail.mailer import mailer, create_email_message
+from ..mail.models import EmailSchema
 from ..helpers.logger import auth_logger, log_error, log_request
 from ..helpers.settings import get_settings
 from ..users.models import UserModel
@@ -24,6 +26,7 @@ from .service import (
     create_access_token,
     create_reset_token,
     get_user_by_email,
+    get_user_by_id,
     update_user_password,
     validate_reset_token,
     validate_token,
@@ -133,7 +136,23 @@ async def password_reset(payload: PasswordResetModel):
         reset_link = f"{environment.APP_HOST}/password-reset/{reset_token}"
 
         # Implement email sending logic here
-
+        email_schema = EmailSchema(
+            email=[user.email],
+            body= {
+                "resetLink": reset_link,
+                "name": f"{user.first_name} {user.last_name}",
+            }
+        )
+        # Render the email body with the data
+        
+        email_message = create_email_message(
+            subject="Password Reset Request",
+            recipients=email_schema.model_dump().get("email"),
+            body=email_schema.model_dump().get("body"),
+        )
+        
+        await mailer.send_message(message=email_message, template_name="reset-password.html")
+        
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"reset_link": reset_link, "token": reset_token},
@@ -180,7 +199,7 @@ async def password_reset_change(
     Endpoint to change the user's password after validating the reset token.
     """
     try:
-        user = await get_user_by_email(payload.email)
+        user = await get_user_by_id(payload.id)
 
         if not user:
             raise HTTPException(
@@ -199,7 +218,7 @@ async def password_reset_change(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "Password changed successfully",
-                "user": updated_user.model_dump(exclude={"password"}),
+                "user": updated_user.model_dump(exclude={"password"}, mode="json"),
             },
         )
     except Exception as e:
@@ -223,4 +242,27 @@ async def authenticated_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
+        )
+
+
+@router.get("/logout", tags=["Authentication"])
+async def logout():
+    """
+    Endpoint to log out the user.
+    This will clear the authentication cookies.
+    """
+    try:
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"message": "Logged out successfully"},
+        )
+        response.delete_cookie("access_token", path="/")
+        response.delete_cookie("token_type", path="/")
+        auth_logger.info("User logged out successfully")
+        return response
+    except Exception as e:
+        log_error(auth_logger, e, "Logout error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during logout",
         )
