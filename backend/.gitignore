@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .env
-site/
+site/*
 amazon/
 newegg/
 ebay/
