@@ -21,46 +21,28 @@ COPY ./frontend/ ./
 RUN pnpm run build
 
 # Stage 2: Set up the Python backend and copy the built frontend
-FROM python:3.12-bookworm AS server
+FROM ghcr.io/astral-sh/uv:debian-slim AS server
 
 # Set working directory
 WORKDIR /app
 
-# Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the Python requirements
+COPY ./backend/uv.lock  /app
+COPY ./backend/pyproject.toml /app
+COPY ./backend/.python-version /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+# Install All Dependencies
+RUN uv sync --locked
 
-# Copy Python project files
-COPY ./backend/pyproject.toml ./backend/uv.lock ./
+# Copy the remaining src files
+COPY ./backend/src /app/src
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install uv \
-    && uv pip install --no-cache-dir -e .
+# Create Site directory and copy build from stage 1
+RUN mkdir -p /app/site
+COPY --from=frontend-builder /app/frontend/build/ /app/site/
 
-# # Create site directory
-# RUN mkdir -p /app/backend/site
+# Expose the port the app runs on
+EXPOSE 80
 
-# # Copy the built frontend from the frontend-builder stage
-# COPY --from=frontend-builder /app/frontend/build/ /app/backend/site/
-
-# # Copy the backend source code
-# COPY ./backend/src/ /app/backend/src/
-
-# # Create necessary directories
-# RUN mkdir -p /app/backend/logs
-
-# # Set working directory to backend
-# WORKDIR /app/backend
-
-# # Expose the port the app runs on
-# EXPOSE 80
-
-# # Command to run the application
-# CMD ["fastapi", "run", "src/main.py","--port", "80", "--proxy-headers"]
+# Command to run the application
+CMD ["uv", "run", "fastapi", "run", "src/main.py","--port", "80", "--proxy-headers"]
