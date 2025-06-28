@@ -35,7 +35,7 @@ class ScrapedProductData(BaseModel):
         title="scraped Product Model",
         arbitrary_types_allowed=True,
         json_encoders={ObjectId: str},
-        populate_by_name=True,
+        populate_by_name=False,
         extra="ignore",
     )
     product_title: str = Field(

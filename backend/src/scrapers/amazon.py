@@ -2,6 +2,7 @@ import re
 from typing import Optional, Tuple
 
 from bs4 import BeautifulSoup
+from ..helpers.logger import scrapers_logger
 
 
 class AmazonScraper:
@@ -36,11 +37,11 @@ class AmazonScraper:
         """
         container_element = self.soup.find(id="desktop_qualifiedBuyBox")
         if not container_element:
-            print("Container element not found in the HTML content.")
+            scrapers_logger.warning("Container element not found in the HTML content.")
             return None
         seller_container = container_element.find(id="offer-display-features")
         if not seller_container:
-            print("Seller container not found in the HTML content.")
+            scrapers_logger.warning("Seller container not found in the HTML content.")
             return None
 
         ships_from_element = seller_container.find(
@@ -49,22 +50,26 @@ class AmazonScraper:
 
         sold_by_element = seller_container.find(id="merchantInfoFeature_feature_div")
         if not ships_from_element:
-            print("Ships from element not found in the HTML content.")
+            scrapers_logger.warning("Ships from element not found in the HTML content.")
 
         if not sold_by_element:
-            print("Sold by element not found in the HTML content.")
+            scrapers_logger.warning("Sold by element not found in the HTML content.")
 
         if not ships_from_element and not sold_by_element:
-            print("Neither ships from nor sold by elements found in the HTML content.")
+            scrapers_logger.warning("Neither ships from nor sold by elements found in the HTML content.")
             return None
 
         ships_from_data = ships_from_element.find(
             "span", class_="a-size-small offer-display-feature-text-message"
         ).get_text(strip=True)
+        
+        print(f"Ships from:", ships_from_data)
 
         sold_by_data = sold_by_element.find(
             "span", class_="a-size-small offer-display-feature-text-message"
         ).get_text(strip=True)
+        
+        print(f"Sold by:", sold_by_data)
         return {
             "ships_from": ships_from_data,
             "sold_by": sold_by_data,
