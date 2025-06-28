@@ -14,7 +14,7 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "**/__pycache__": true,
-        "**/site": true,
+        "**/site": false,
         "**/static": false,
     },
     "tailwindCSS.classAttributes": [
