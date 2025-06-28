@@ -71,14 +71,25 @@ class ProductModel(BaseModel):
         description="List of price tracking records",
         alias="productTracking",
     )
+    schedule_id: Optional[str] = Field(
+        default=None,
+        description="ID of the scheduling job for this product",
+        alias="scheduleId",
+    )
     created_at: Optional[str] = Field(
         default_factory=lambda: datetime.now().isoformat(),
         description="Timestamp when the product was added",
         alias="createdAt",
     )
+    
+    updated_at: Optional[str] = Field(
+        default_factory=lambda: datetime.now().isoformat(),
+        description="Timestamp when the product was last updated",
+        alias="updatedAt",
+    )
 
 
-class AmazonProductValidation(BaseModel):
+class ProductValidation(BaseModel):
     product_url: str = Field(
-        ..., min_length=10, description="Amazon product URL", alias="productUrl"
+        ..., min_length=10, description="Product link to validate", alias="productUrl"
     )
