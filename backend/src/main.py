@@ -21,6 +21,7 @@ from .helpers.seed import (
     create_user,
 )
 from .helpers.settings import get_settings
+from .scheduler.scheduling import scheduler
 
 load_dotenv()
 
@@ -35,10 +36,6 @@ backend_dir = os.path.abspath(
 site_directory = os.path.join(backend_dir, "site")
 static_directory = os.path.join(backend_dir, "static")
 
-# Log the site directory for debugging
-print(f"Site directory: {site_directory}")
-print(f"Site directory exists: {os.path.exists(site_directory)}")
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +49,7 @@ async def lifespan(app: FastAPI):
         await app.state.mongo_client.aconnect()
         # Note: AsyncMongoClient doesn't have aconnect() method
         # It connects automatically when a query is executed
+        scheduler.start()
         log_startup_event(logger, "MongoDB client initialized")
 
         log_startup_event(logger, "Checking for user agents in the database")
@@ -85,6 +83,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         # Cleanup resources on shutdown
+        scheduler.shutdown()
         await app.state.mongo_client.aclose()
         log_startup_event(logger, "MongoDB client disconnected successfully")
         log_startup_event(logger, "Application shutdown complete")
@@ -124,10 +123,12 @@ pricetracker.mount(
     name="static_app",
 )
 
+
 # Serve the root path
 @pricetracker.get("/")
 async def serve_root():
     return FileResponse(os.path.join(site_directory, "fallback.html"))
+
 
 # Serve the SPA and its assets
 @pricetracker.get("/{full_path:path}")
@@ -135,11 +136,11 @@ async def serve_spa(full_path: str):
     # Paths that should be handled by the API
     if full_path.startswith("api/"):
         return {"detail": "Not Found"}
-    
+
     # Check if the requested path is a file in the site directory
     requested_path = os.path.join(site_directory, full_path)
     if os.path.isfile(requested_path):
         return FileResponse(requested_path)
-    
+
     # For all other paths, return the SPA entry point (fallback.html)
     return FileResponse(os.path.join(site_directory, "fallback.html"))
