@@ -1,0 +1,39 @@
+{
+    "servers": {
+        "context7": {
+            "type": "http",
+            "url": "https://mcp.context7.com/mcp"
+        },
+        "sequentialthinking": {
+            "command": "docker",
+            "args": [
+                "run",
+                "-i",
+                "--rm",
+                "mcp/sequentialthinking"
+            ]
+        },
+        "mongodb": {
+            "command": "docker",
+            "args": [
+                "run",
+                "-i",
+                "--rm",
+                "-e",
+                "MDB_MCP_CONNECTION_STRING",
+                "mcp/mongodb"
+            ],
+            "env": {
+                "MDB_MCP_CONNECTION_STRING": "mongodb://mongo:mongo@192.168.100.129/priceTracker?authSource=admin"
+            }
+        },
+        "mcp-server-chart": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@antv/mcp-server-chart"
+            ]
+        }
+    },
+    "inputs": []
+}
